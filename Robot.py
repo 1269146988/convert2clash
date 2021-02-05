@@ -328,11 +328,11 @@ def save_config(path, data):
 # 程序入口
 if __name__ == '__main__':
     # 订阅地址 多个地址用;隔开
-    sub_url = ''
+    sub_url = input('请输入订阅地址(多个地址用;隔开):')
     # 输出路径
     output_path = './output.yaml'
     # 规则策略
-    config_url = 'https://cdn.jsdelivr.net/gh/Celeter/convert2clash/config.yaml'
+    config_url = 'https://cdn.jsdelivr.net/gh/Celeter/convert2clash@master/config.yaml'
     config_path = './config.yaml'
 
     if sub_url is None or sub_url == '':
@@ -341,3 +341,4 @@ if __name__ == '__main__':
     default_config = get_default_config(config_url, config_path)
     final_config = add_proxies_to_model(node_list, default_config)
     save_config(output_path, final_config)
+    print(f'文件已导出至 {config_path}')
