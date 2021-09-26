@@ -174,9 +174,11 @@ def get_proxies(urls):
                 decode_proxy = decode_ssr_node([node])
                 clash_node = ssr_to_clash(decode_proxy)
             else:
-                pass
-            proxy_list['proxy_list'].extend(clash_node['proxy_list'])
-            proxy_list['proxy_names'].extend(clash_node['proxy_names'])
+                continue
+            for name, proxy in zip(clash_node['proxy_names'], clash_node['proxy_list']):
+                if name not in proxy_list['proxy_names']:
+                    proxy_list['proxy_names'].append(name)
+                    proxy_list['proxy_list'].append(proxy)
     log('共发现:{}个节点'.format(len(proxy_list['proxy_names'])))
     return proxy_list
 
@@ -192,8 +194,9 @@ def v2ray_to_clash(arr):
         if item.get('ps') is None and item.get('add') is None and item.get('port') is None \
                 and item.get('id') is None and item.get('aid') is None:
             continue
+        name = f"{item.get('ps').strip() or ''}:{item.get('port')}"
         obj = {
-            'name': item.get('ps').strip() if item.get('ps') else None,
+            'name': name,
             'type': 'vmess',
             'server': item.get('add'),
             'port': int(item.get('port')),
@@ -225,8 +228,9 @@ def ss_to_clash(arr):
         'proxy_names': []
     }
     for item in arr:
+        name = f"{item.get('name').strip() or ''}:{item.get('port')}"
         obj = {
-            'name': item.get('name').strip() if item.get('name') else None,
+            'name': name,
             'type': 'ss',
             'server': item.get('server'),
             'port': int(item.get('port')),
@@ -256,8 +260,10 @@ def ssr_to_clash(arr):
         'proxy_names': []
     }
     for item in arr:
+        name = f"{item.get('remarks').strip() or ''}:{item.get('port')}"
+
         obj = {
-            'name': item.get('remarks').strip() if item.get('remarks') else None,
+            'name': name,
             'type': 'ssr',
             'server': item.get('server'),
             'port': int(item.get('port')),
@@ -293,13 +299,12 @@ def load_local_config(path):
 
 
 # 获取规则策略的配置文件
-def get_default_config(url, path):
+def get_default_config(path):
     try:
-        raw = requests.get(url, timeout=5000).content.decode('utf-8')
-        template_config = yaml.load(raw, Loader=yaml.FullLoader)
-    except requests.exceptions.RequestException:
-        log('网络获取规则配置失败,加载本地配置文件')
         template_config = load_local_config(path)
+    except requests.exceptions.RequestException:
+        sys.exit("获取配置失败")
+
     log('已获取规则配置文件')
     return template_config
 
@@ -332,13 +337,12 @@ if __name__ == '__main__':
     # 输出路径
     output_path = './output.yaml'
     # 规则策略
-    config_url = 'https://cdn.jsdelivr.net/gh/Celeter/convert2clash@master/config.yaml'
     config_path = './config.yaml'
 
     if sub_url is None or sub_url == '':
         sys.exit()
     node_list = get_proxies(sub_url)
-    default_config = get_default_config(config_url, config_path)
+    default_config = get_default_config(config_path)
     final_config = add_proxies_to_model(node_list, default_config)
     save_config(output_path, final_config)
     print(f'文件已导出至 {config_path}')
